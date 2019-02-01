@@ -56,7 +56,7 @@ public class PDFSend {
         postParameters.Add("file", new FormUpload.FileParameter(data, appointmentID + ".pdf", "application/pdf"));
 
         // Create request and receive response
-        string postURL = "https://api.athenahealth.com/" + version + "/" + practiceID + "/patients/" + patientID + "/documents";
+        string postURL = Config.MDPUrl.Uri.ToString() + version + "/" + practiceID + "/patients/" + patientID + "/documents";
         string userAgent = "Someone";  // The secret sauce: seems meaningless, but userAgent apparently must have a value
         string webResponse = FormUpload.MultipartFormDataPost(postURL, userAgent, postParameters, token);
 

@@ -15,7 +15,7 @@
 using System;
 using System.Text;
 using System.Collections.Generic;
-using System.Json;
+using Newtonsoft.Json;
 using System.Net;
 using System.Linq;
 using System.IO;
@@ -78,7 +78,7 @@ namespace Athenahealth
 	  this.secret = secret;
 	  this.PracticeID = practiceid;
 	
-	  this.baseUrl = "https://api.athenahealth.com/";
+	  this.baseUrl = Config.MDPUrl.Uri.ToString();
 	
 	  this.authenticate();
 	}
@@ -120,13 +120,13 @@ namespace Athenahealth
 	  WebResponse response = request.GetResponse();
 	  Stream receive = response.GetResponseStream();
 	  StreamReader reader = new StreamReader(receive, UTF8);
-	  JsonValue authorization = JsonValue.Parse(reader.ReadToEnd());
-	  
+	  //JsonValue authorization = JsonValue.Parse(reader.ReadToEnd());
+	  dynamic authorization = JsonConvert.DeserializeObject(reader.ReadToEnd());
 	  // Don't forget to close the response!
 	  response.Close();
 	  
 	  // Grab the token!
-	  this.token = authorization["access_token"];
+	  this.token = authorization.access_token;
 	}
   
 	/// <summary>
@@ -170,7 +170,8 @@ namespace Athenahealth
 	/// <param name="headers">The headers that will be added to the request</param>
 	/// <param name="secondcall">True if this is the retried call</param>
 	/// <returns>The JSON-decoded response</returns>
-	private JsonValue AuthorizedCall(WebRequest request, Dictionary<string, string> body, Dictionary<string, string> headers, bool secondcall = false)
+	private dynamic AuthorizedCall(WebRequest request, Dictionary<string, string> body, Dictionary<string, string> headers, 
+		bool secondcall = false)
 	{
 	  // First add the auth header, then update with the rest of them.
 	  request.Headers["Authorization"] = string.Format("Bearer {0}", this.token);
@@ -200,7 +201,7 @@ namespace Athenahealth
 		  reader = new StreamReader(response.GetResponseStream(), UTF8);
 		  reply = reader.ReadToEnd();
 		  response.Close();
-		  return JsonValue.Parse(reply);
+		  return JsonConvert.DeserializeObject(reply);
 		}
 	  catch (WebException wex)
 		{
@@ -218,7 +219,7 @@ namespace Athenahealth
 			  retry.Method = request.Method;
 			  return this.AuthorizedCall(retry, body, headers, true);
 			}
-		  return JsonValue.Parse(reply);
+		  return JsonConvert.DeserializeObject(reply);
 		}
 	}
   
@@ -227,7 +228,7 @@ namespace Athenahealth
 	/// </summary>
 	/// <param name="path">The URI to access</param>
 	/// <returns>The JSON-decoded response</returns>
-	public JsonValue GET(string path)
+	public dynamic GET(string path)
 	{
 	  return GET(path, null, null);
 	}
@@ -238,7 +239,7 @@ namespace Athenahealth
 	/// <param name="path">The URI to access</param>
 	/// <param name="parameters">The request parameters</param>
 	/// <returns>The JSON-decoded response</returns>
-	public JsonValue GET(string path, Dictionary<string, string> parameters)
+	public dynamic GET(string path, Dictionary<string, string> parameters)
 	{
 	  return GET(path, parameters, null);
 	}
@@ -250,7 +251,7 @@ namespace Athenahealth
 	/// <param name="parameters">The request parameters</param>
 	/// <param name="headers">The request headers</param>
 	/// <returns>The JSON-decoded response</returns>
-	public JsonValue GET(string path, Dictionary<string, string> parameters, Dictionary<string, string> headers)
+	public dynamic GET(string path, Dictionary<string, string> parameters, Dictionary<string, string> headers)
 	{
 	  string url = PathJoin(this.baseUrl, this.version, this.PracticeID, path);
 	  string query = "";
@@ -271,7 +272,7 @@ namespace Athenahealth
 	/// </summary>
 	/// <param name="path">The URI to access</param>
 	/// <returns>The JSON-decoded response</returns>
-	public JsonValue POST(string path)
+	public dynamic POST(string path)
 	{
 	  return POST(path, null, null);
 	}
@@ -282,7 +283,7 @@ namespace Athenahealth
 	/// <param name="path">The URI to access</param>
 	/// <param name="parameters">The request parameters</param>
 	/// <returns>The JSON-decoded response</returns>
-	public JsonValue POST(string path, Dictionary<string, string> parameters)
+	public dynamic POST(string path, Dictionary<string, string> parameters)
 	{
 	  return POST(path, parameters, null);
 	}
@@ -294,7 +295,7 @@ namespace Athenahealth
 	/// <param name="parameters">The request parameters</param>
 	/// <param name="headers">The request headers</param>
 	/// <returns>The JSON-decoded response</returns>
-	public JsonValue POST(string path, Dictionary<string, string> parameters, Dictionary<string, string> headers)
+	public dynamic POST(string path, Dictionary<string, string> parameters, Dictionary<string, string> headers)
 	{
 	  string url = PathJoin(this.baseUrl, this.version, this.PracticeID, path);
 	  WebRequest request = WebRequest.Create(url);
@@ -310,7 +311,7 @@ namespace Athenahealth
 	/// </summary>
 	/// <param name="path">The URI to access</param>
 	/// <returns>The JSON-decoded response</returns>
-	public JsonValue PUT(string path)
+	public dynamic PUT(string path)
 	{
 	  return PUT(path, null, null);
 	}
@@ -321,7 +322,7 @@ namespace Athenahealth
 	/// <param name="path">The URI to access</param>
 	/// <param name="parameters">The request parameters</param>
 	/// <returns>The JSON-decoded response</returns>
-	public JsonValue PUT(string path, Dictionary<string, string> parameters)
+	public dynamic PUT(string path, Dictionary<string, string> parameters)
 	{
 	  return PUT(path, parameters, null);
 	}
@@ -333,7 +334,7 @@ namespace Athenahealth
 	/// <param name="parameters">The request parameters</param>
 	/// <param name="headers">The request headers</param>
 	/// <returns>The JSON-decoded response</returns>
-	public JsonValue PUT(string path, Dictionary<string, string> parameters, Dictionary<string, string> headers)
+	public dynamic PUT(string path, Dictionary<string, string> parameters, Dictionary<string, string> headers)
 	{
 	  string url = PathJoin(this.baseUrl, this.version, this.PracticeID, path);
 	  WebRequest request = WebRequest.Create(url);
@@ -349,7 +350,7 @@ namespace Athenahealth
 	/// </summary>
 	/// <param name="path">The URI to access</param>
 	/// <returns>The JSON-decoded response</returns>
-	public JsonValue DELETE(string path)
+	public dynamic DELETE(string path)
 	{
 	  return DELETE(path, null, null);
 	}
@@ -360,7 +361,7 @@ namespace Athenahealth
 	/// <param name="path">The URI to access</param>
 	/// <param name="parameters">The request parameters</param>
 	/// <returns>The JSON-decoded response</returns>
-	public JsonValue DELETE(string path, Dictionary<string, string> parameters)
+	public dynamic DELETE(string path, Dictionary<string, string> parameters)
 	{
 	  return DELETE(path, parameters, null);
 	}
@@ -372,7 +373,7 @@ namespace Athenahealth
 	/// <param name="parameters">The request parameters</param>
 	/// <param name="headers">The request headers</param>
 	/// <returns>The JSON-decoded response</returns>
-	public JsonValue DELETE(string path, Dictionary<string, string> parameters, Dictionary<string, string> headers)
+	public dynamic DELETE(string path, Dictionary<string, string> parameters, Dictionary<string, string> headers)
 	{
 	  string url = PathJoin(this.baseUrl, this.version, this.PracticeID, path);
 	  string query = "";
